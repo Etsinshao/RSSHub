@@ -1,8 +1,9 @@
-import { Route } from '@/types';
 import { load } from 'cheerio';
-import { parseDate } from '@/utils/parse-date';
 import dayjs from 'dayjs';
-import puppeteer from '@/utils/puppeteer';
+
+import type { Route } from '@/types';
+import { parseDate } from '@/utils/parse-date';
+import playwright from '@/utils/playwright';
 
 const baseIndexUrl = 'https://www.sice.uestc.edu.cn/index.htm';
 const host = 'https://www.sice.uestc.edu.cn/';
@@ -32,7 +33,7 @@ export const route: Route = {
 };
 
 async function handler() {
-    const browser = await puppeteer({ stealth: true });
+    const browser = await playwright();
     const page = await browser.newPage();
     await page.setRequestInterception(true);
     page.on('request', (request) => {
@@ -47,7 +48,8 @@ async function handler() {
     const $ = load(content);
 
     const out = $('.notice p')
-        .map((_, item) => {
+        .toArray()
+        .map((item) => {
             item = $(item);
             const now = dayjs();
             let date = dayjs(now.year() + '-' + item.find('a.date').text());
@@ -60,8 +62,7 @@ async function handler() {
                 link: host + item.find('a[href]').attr('href'),
                 pubDate: parseDate(date),
             };
-        })
-        .get();
+        });
 
     return {
         title: '信通学院通知',

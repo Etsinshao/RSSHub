@@ -1,10 +1,11 @@
-import { Route } from '@/types';
-import cache from '@/utils/cache';
 import { load } from 'cheerio';
+
 import { config } from '@/config';
-import { parseDate } from '@/utils/parse-date';
+import type { Route } from '@/types';
+import cache from '@/utils/cache';
 import logger from '@/utils/logger';
-import puppeteer from '@/utils/puppeteer';
+import { parseDate } from '@/utils/parse-date';
+import playwright from '@/utils/playwright';
 
 // /iqiyi/user/video/:uid
 // http://localhost:1200/iqiyi/user/video/2289191062
@@ -35,8 +36,8 @@ async function handler(ctx) {
     const uid = ctx.req.param('uid');
     const link = `https://www.iqiyi.com/u/${uid}/videos`;
 
-    // Use puppeteer because iqiyi page has a delay.
-    const browser = await puppeteer();
+    // Use Playwright because iqiyi page has a delay.
+    const browser = await playwright();
     const data = await cache.tryGet(
         link,
         async () => {
@@ -58,22 +59,18 @@ async function handler(ctx) {
             return {
                 title: $('title').text(),
                 link,
-                item:
-                    list &&
-                    list
-                        .map((index, item) => ({
-                            title: $(item).attr('title'),
-                            // description: `<img src="${$(item).find('.li-pic img').attr('src')}">`,
-                            pubDate: parseDate($(item).find('.li-sub span.sub-date').text(), 'YYYY-MM-DD'),
-                            link: $(item).find('.li-dec a').attr('href'),
-                        }))
-                        .get(),
+                item: list.toArray().map((item) => ({
+                    title: $(item).attr('title'),
+                    // description: `<img src="${$(item).find('.li-pic img').attr('src')}">`,
+                    pubDate: parseDate($(item).find('.li-sub span.sub-date').text(), 'YYYY-MM-DD'),
+                    link: $(item).find('.li-dec a').attr('href'),
+                })),
             };
         },
         config.cache.routeExpire,
         false
     );
-    browser.close();
+    await browser.close();
 
     return data;
 }

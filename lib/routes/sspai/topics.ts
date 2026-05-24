@@ -1,4 +1,4 @@
-import { Route } from '@/types';
+import type { Route } from '@/types';
 import cache from '@/utils/cache';
 import got from '@/utils/got';
 import { parseDate } from '@/utils/parse-date';
@@ -25,11 +25,11 @@ export const route: Route = {
     maintainers: ['SunShinenny'],
     handler,
     url: 'sspai.com/topics',
-    description: `此为专题广场更新提示 => 集合型而非单篇文章。与下方 "专题内文章更新" 存在明显区别！`,
+    description: '此为专题广场更新提示 => 集合型而非单篇文章。与下方 "专题内文章更新" 存在明显区别！',
 };
 
 async function handler() {
-    const api_url = `https://sspai.com/api/v1/topics?offset=0&limit=20&include_total=false`;
+    const api_url = 'https://sspai.com/api/v1/topics?offset=0&limit=20&include_total=false';
     const resp = await got({
         method: 'get',
         url: api_url,
@@ -42,7 +42,7 @@ async function handler() {
 
             const key = `sspai:topics:${item.id}`;
             return cache.tryGet(key, () => {
-                description = `${item.intro}<br><img src="https://cdn.sspai.com/${item.banner}" /><br>如有兴趣,请复制链接订阅 <br> <h3>https://rsshub.app/sspai/topic/${item.id}</h3>`;
+                description = `<br><img src="https://cdnfile.sspai.com/${item.banner}" alt="Article Cover Image" style="display: block; margin: 0 auto;"/>${item.intro}<br>如有兴趣,请复制链接订阅 <br> <h3>https://rsshub.app/sspai/topic/${item.id}</h3>`;
 
                 return {
                     title: item.title.trim(),
@@ -56,9 +56,9 @@ async function handler() {
     );
 
     return {
-        title: `少数派专题广场更新推送`,
-        link: `https://sspai.com/topics`,
-        description: `仅仅推送新的专题(集合型而非具体文章) `,
+        title: '少数派专题广场更新推送',
+        link: 'https://sspai.com/topics',
+        description: '仅仅推送新的专题(集合型而非具体文章) ',
         item: items,
     };
 }

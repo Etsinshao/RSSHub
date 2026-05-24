@@ -1,9 +1,10 @@
-import { Route } from '@/types';
-import cache from '@/utils/cache';
 import { load } from 'cheerio';
-import { parseDate } from '@/utils/parse-date';
+
 import { config } from '@/config';
-import puppeteer from '@/utils/puppeteer';
+import type { Route } from '@/types';
+import cache from '@/utils/cache';
+import { parseDate } from '@/utils/parse-date';
+import playwright from '@/utils/playwright';
 
 export const route: Route = {
     path: '/:id',
@@ -17,6 +18,7 @@ export const route: Route = {
         supportBT: false,
         supportPodcast: false,
         supportScihub: false,
+        nsfw: true,
     },
     radar: [
         {
@@ -36,19 +38,19 @@ async function handler(ctx) {
     const response = await cache.tryGet(
         link,
         async () => {
-            const browser = await puppeteer();
+            const browser = await playwright();
             const page = await browser.newPage();
             await page.setRequestInterception(true);
             page.on('request', (request) => {
                 request.resourceType() === 'document' || request.resourceType() === 'script' || request.resourceType() === 'fetch' ? request.continue() : request.abort();
             });
-            page.on('requestfinished', (request) => {
+            page.on('requestfinished', async (request) => {
                 if (request.url() === link && request.response().status() === 403) {
-                    page.close();
+                    await page.close();
                 }
             });
 
-            let html = '';
+            let html: string;
             try {
                 await page.goto(link, {
                     waitUntil: 'domcontentloaded',

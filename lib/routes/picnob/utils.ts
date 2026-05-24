@@ -1,18 +1,20 @@
-const puppeteerGet = async (url, browser) => {
+import { getPlaywrightPage } from '@/utils/playwright';
+
+const playwrightGet = async (url) => {
     let data;
-    const page = await browser.newPage();
-    await page.setRequestInterception(true);
-    page.on('request', (request) => {
-        request.resourceType() === 'document' ? request.continue() : request.abort();
+    const { destroy } = await getPlaywrightPage(url, {
+        onBeforeLoad: async (page) => {
+            await page.setRequestInterception(true);
+            page.on('request', (request) => {
+                request.resourceType() === 'document' ? request.continue() : request.abort();
+            });
+            page.on('response', async (response) => {
+                data = await (response.request().url().includes('/api/posts') ? response.json() : response.text());
+            });
+        },
     });
-    page.on('response', async (response) => {
-        data = await (response.request().url().includes('/api/posts') ? response.json() : response.text());
-    });
-    await page.goto(url, {
-        waitUntil: 'domcontentloaded',
-    });
-    await page.close();
+    await destroy();
     return data;
 };
 
-export { puppeteerGet };
+export { playwrightGet };

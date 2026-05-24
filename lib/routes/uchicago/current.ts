@@ -1,10 +1,11 @@
-import { Route } from '@/types';
-import cache from '@/utils/cache';
 import { load } from 'cheerio';
-import { parseDate } from '@/utils/parse-date';
-import { getCookies, setCookies } from '@/utils/puppeteer-utils';
+
+import type { Route } from '@/types';
+import cache from '@/utils/cache';
 import logger from '@/utils/logger';
-import puppeteer from '@/utils/puppeteer';
+import { parseDate } from '@/utils/parse-date';
+import playwright from '@/utils/playwright';
+import { getCookies, setCookies } from '@/utils/playwright-utils';
 
 export const route: Route = {
     path: '/journals/current/:journal',
@@ -34,7 +35,7 @@ async function handler(ctx) {
     const baseUrl = 'https://www.journals.uchicago.edu';
     const link = `${baseUrl}/toc/${journal}/current`;
 
-    const browser = await puppeteer();
+    const browser = await playwright();
     const page = await browser.newPage();
     await page.setRequestInterception(true);
     page.on('request', (request) => {
@@ -46,7 +47,7 @@ async function handler(ctx) {
     });
     const response = await page.evaluate(() => document.documentElement.innerHTML);
     const cookies = await getCookies(page);
-    page.close();
+    await page.close();
     const $ = load(response);
 
     const list = $('.issue-item__title')
@@ -68,7 +69,7 @@ async function handler(ctx) {
                     referer: link,
                 });
                 const response = await page.evaluate(() => document.documentElement.innerHTML);
-                page.close();
+                await page.close();
 
                 const $ = load(response);
 
@@ -94,7 +95,7 @@ async function handler(ctx) {
         )
     );
 
-    browser.close();
+    await browser.close();
 
     return {
         title: $('head title').text(),

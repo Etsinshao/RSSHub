@@ -1,9 +1,9 @@
 import got from '@/utils/got';
-import puppeteer from '@/utils/puppeteer';
+import playwright from '@/utils/playwright';
 
 async function getContent(url, pptr = false) {
     if (pptr) {
-        const browser = await puppeteer({ stealth: true });
+        const browser = await playwright();
         try {
             const page = await browser.newPage();
             // 更改 window.navigator.webdriver 值以避开反爬
@@ -23,7 +23,7 @@ async function getContent(url, pptr = false) {
             const content = await page.content();
             return content;
         } finally {
-            browser.close();
+            await browser.close();
         }
     } else {
         const response = await got(url);

@@ -1,10 +1,12 @@
-import { Route } from '@/types';
-import cache from '@/utils/cache';
 import { load } from 'cheerio';
-import { parseDate } from '@/utils/parse-date';
-import { baseUrl } from './utils';
+
 import { config } from '@/config';
-import puppeteer from '@/utils/puppeteer';
+import type { Route } from '@/types';
+import cache from '@/utils/cache';
+import { parseDate } from '@/utils/parse-date';
+import playwright from '@/utils/playwright';
+
+import { baseUrl } from './utils';
 
 export const route: Route = {
     path: '/blogs/:name?',
@@ -38,7 +40,7 @@ async function handler(ctx) {
     const response = await cache.tryGet(
         link,
         async () => {
-            const browser = await puppeteer();
+            const browser = await playwright();
             const page = await browser.newPage();
             await page.setRequestInterception(true);
 
@@ -52,8 +54,8 @@ async function handler(ctx) {
 
             const response = await page.content();
 
-            page.close();
-            browser.close();
+            await page.close();
+            await browser.close();
             return response;
         },
         config.cache.routeExpire,
@@ -68,9 +70,15 @@ async function handler(ctx) {
             return {
                 title: item.find('title').text().trim(),
                 link: item.find('link').text().trim(),
-                author: item.find('dc\\:creator').text().trim(),
+                author: item
+                    .find(String.raw`dc\:creator`)
+                    .text()
+                    .trim(),
                 pubDate: parseDate(item.find('pubDate').text().trim()),
-                description: item.find('content\\:encoded').text().trim(),
+                description: item
+                    .find(String.raw`content\:encoded`)
+                    .text()
+                    .trim(),
             };
         });
 

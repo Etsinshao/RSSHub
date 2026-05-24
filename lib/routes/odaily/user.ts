@@ -1,9 +1,11 @@
-import { Route } from '@/types';
+import { load } from 'cheerio';
+
+import type { Route } from '@/types';
 import cache from '@/utils/cache';
 import got from '@/utils/got';
-import { load } from 'cheerio';
-import timezone from '@/utils/timezone';
 import { parseDate } from '@/utils/parse-date';
+import timezone from '@/utils/timezone';
+
 import { rootUrl } from './utils';
 
 export const route: Route = {
@@ -58,8 +60,13 @@ async function handler(ctx) {
 
                 const content = load(detailResponse.data.match(/"content":"(.*)","extraction_tags":/)[1]);
 
-                content('img').each(function () {
-                    content(this).attr('src', content(this).attr('src').replaceAll('\\"', ''));
+                content('img').each((_, el) => {
+                    content(el).attr(
+                        'src',
+                        content(el)
+                            .attr('src')
+                            .replaceAll(String.raw`\"`, '')
+                    );
                 });
 
                 item.description = content.html();

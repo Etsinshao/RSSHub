@@ -1,10 +1,10 @@
-import puppeteer from '@/utils/puppeteer';
+import playwright from '@/utils/playwright';
 
 const baseURL = 'https://alternativeto.net';
 
-const puppeteerGet = (url, cache) =>
+const playwrightGet = (url, cache) =>
     cache.tryGet(url, async () => {
-        const browser = await puppeteer();
+        const browser = await playwright();
         const page = await browser.newPage();
         await page.setRequestInterception(true);
         page.on('request', (request) => {
@@ -14,8 +14,8 @@ const puppeteerGet = (url, cache) =>
             waitUntil: 'domcontentloaded',
         });
         const html = await page.evaluate(() => document.documentElement.innerHTML);
-        browser.close();
+        await browser.close();
         return html;
     });
 
-export { baseURL, puppeteerGet };
+export { baseURL, playwrightGet };

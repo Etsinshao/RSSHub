@@ -1,7 +1,8 @@
-import { Route } from '@/types';
+import { load } from 'cheerio';
+
+import type { Route } from '@/types';
 import cache from '@/utils/cache';
 import got from '@/utils/got';
-import { load } from 'cheerio';
 import parser from '@/utils/rss-parser';
 
 export const route: Route = {
@@ -28,7 +29,7 @@ export const route: Route = {
     handler,
     description: `Provides a better reading experience (full articles) over the official ones.
 
-  Support all channels, refer to [CNBC RSS feeds](https://www.cnbc.com/rss-feeds/).`,
+Support all channels, refer to [CNBC RSS feeds](https://www.cnbc.com/rss-feeds/).`,
 };
 
 async function handler(ctx) {
@@ -65,7 +66,7 @@ async function handler(ctx) {
                     }
 
                     const meta = JSON.parse($('[type=application/ld+json]').last().text());
-                    item.author = meta.author ? meta.author.name ?? meta.author.map((a) => a.name).join(', ') : null;
+                    item.author = meta.author ? (meta.author.name ?? meta.author.map((a) => a.name).join(', ')) : null;
                     item.category = meta.keywords;
 
                     return item;

@@ -1,12 +1,12 @@
-import { Route } from '@/types';
+import { config } from '@/config';
+import InvalidParameterError from '@/errors/types/invalid-parameter';
+import type { Route } from '@/types';
 import cache from '@/utils/cache';
 import { parseDate } from '@/utils/parse-date';
-import { art } from '@/utils/render';
-import { config } from '@/config';
+import playwright from '@/utils/playwright';
 import { fallback, queryToBoolean } from '@/utils/readable-social';
-import { templates, resolveUrl, proxyVideo, getOriginAvatar } from './utils';
-import puppeteer from '@/utils/puppeteer';
-import InvalidParameterError from '@/errors/types/invalid-parameter';
+
+import { getOriginAvatar, proxyVideo, resolveUrl, templates } from './utils';
 
 export const route: Route = {
     path: '/hashtag/:cid/:routeParams?',
@@ -34,7 +34,7 @@ export const route: Route = {
 
 async function handler(ctx) {
     const cid = ctx.req.param('cid');
-    if (isNaN(cid)) {
+    if (Number.isNaN(cid)) {
         throw new InvalidParameterError('Invalid tag ID. Tag ID should be a number.');
     }
     const routeParams = Object.fromEntries(new URLSearchParams(ctx.req.param('routeParams')));
@@ -47,7 +47,7 @@ async function handler(ctx) {
     const tagData = await cache.tryGet(
         `douyin:hashtag:${cid}`,
         async () => {
-            const browser = await puppeteer();
+            const browser = await playwright();
             const page = await browser.newPage();
             await page.setRequestInterception(true);
             let awemeList = '';
@@ -98,9 +98,9 @@ async function handler(ctx) {
 
         // render description
         const desc = post.desc && post.desc.replaceAll('\n', '<br>');
-        let media = art(embed && videoList ? templates.embed : templates.cover, { img, videoList, duration });
-        media = embed && videoList && iframe ? art(templates.iframe, { content: media }) : media; // warp in iframe
-        const description = art(templates.desc, { desc, media });
+        let media = (embed && videoList ? templates.embed : templates.cover)({ img, videoList, duration });
+        media = embed && videoList && iframe ? templates.iframe({ content: media }) : media; // warp in iframe
+        const description = templates.desc({ desc, media });
 
         return {
             title: post.desc,
