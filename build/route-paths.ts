@@ -1972,7 +1972,6 @@ export type RoutePath =
   | `/nature/siteindex`
   | `/nautil/topic/:tid`
   | `/nautiljon/releases/manga`
-  | `/naver/search/:category/:keyword`
   | `/nbd/:id?`
   | `/nbd/daily`
   | `/nber/new`
